@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Organizador pessoal de tarefas, compromissos e agenda — simples, rápido e bonito." />
+  <title>Flow — Organizador Pessoal</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">
+        <i data-lucide="zap"></i>
+      </div>
+      <span class="logo-text">Flow</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button class="nav-btn active" id="nav-tasks" onclick="switchView('tasks')" title="Tarefas">
+        <i data-lucide="columns-3"></i>
+        <span>Tarefas</span>
+      </button>
+      <button class="nav-btn" id="nav-agenda" onclick="switchView('agenda')" title="Agenda">
+        <i data-lucide="calendar-clock"></i>
+        <span>Agenda</span>
+        <span class="badge" id="badge-agenda"></span>
+      </button>
+      <button class="nav-btn" id="nav-calendar" onclick="switchView('calendar')" title="Calendário">
+        <i data-lucide="calendar-days"></i>
+        <span>Calendário</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="stats-mini">
+        <div class="stat-item">
+          <span class="stat-num" id="stat-done">0</span>
+          <span class="stat-label">Concluídas</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num" id="stat-today">0</span>
+          <span class="stat-label">Hoje</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main">
+    <!-- Header -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()" title="Menu">
+          <i data-lucide="menu"></i>
+        </button>
+        <div class="topbar-title">
+          <h1 id="view-title">Quadro de Tarefas</h1>
+          <span id="view-subtitle" class="view-subtitle">Organize suas atividades</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="datetime-display" id="datetime-display"></div>
+        <button class="btn-primary" id="btn-add-main" onclick="openAddModal()" title="Adicionar">
+          <i data-lucide="plus"></i>
+          <span>Adicionar</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ===== VIEW: TASKS (KANBAN) ===== -->
+    <section class="view" id="view-tasks">
+      <div class="kanban-board">
+        <!-- A Fazer -->
+        <div class="kanban-col" id="col-todo" data-status="todo">
+          <div class="col-header">
+            <div class="col-indicator" style="background: #6366f1;"></div>
+            <h2 class="col-title">A Fazer</h2>
+            <span class="col-count" id="count-todo">0</span>
+          </div>
+          <div class="cards-container" id="cards-todo"
+               ondragover="onDragOver(event)" ondrop="onDrop(event, 'todo')">
+          </div>
+          <button class="btn-add-card" onclick="openAddModal('task', 'todo')">
+            <i data-lucide="plus"></i> Adicionar tarefa
+          </button>
+        </div>
+
+        <!-- Em Andamento -->
+        <div class="kanban-col" id="col-doing" data-status="doing">
+          <div class="col-header">
+            <div class="col-indicator" style="background: #f59e0b;"></div>
+            <h2 class="col-title">Em Andamento</h2>
+            <span class="col-count" id="count-doing">0</span>
+          </div>
+          <div class="cards-container" id="cards-doing"
+               ondragover="onDragOver(event)" ondrop="onDrop(event, 'doing')">
+          </div>
+          <button class="btn-add-card" onclick="openAddModal('task', 'doing')">
+            <i data-lucide="plus"></i> Adicionar tarefa
+          </button>
+        </div>
+
+        <!-- Concluído -->
+        <div class="kanban-col" id="col-done" data-status="done">
+          <div class="col-header">
+            <div class="col-indicator" style="background: #10b981;"></div>
+            <h2 class="col-title">Concluído</h2>
+            <span class="col-count" id="count-done">0</span>
+          </div>
+          <div class="cards-container" id="cards-done"
+               ondragover="onDragOver(event)" ondrop="onDrop(event, 'done')">
+          </div>
+          <button class="btn-add-card" onclick="openAddModal('task', 'done')">
+            <i data-lucide="plus"></i> Adicionar tarefa
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== VIEW: AGENDA ===== -->
+    <section class="view hidden" id="view-agenda">
+      <div class="agenda-toolbar">
+        <div class="filter-tabs">
+          <button class="filter-tab active" onclick="filterAgenda('today', this)">Hoje</button>
+          <button class="filter-tab" onclick="filterAgenda('week', this)">Esta semana</button>
+          <button class="filter-tab" onclick="filterAgenda('all', this)">Todos</button>
+        </div>
+        <button class="btn-primary" onclick="openAddModal('event')">
+          <i data-lucide="plus"></i> Compromisso
+        </button>
+      </div>
+
+      <div class="agenda-empty hidden" id="agenda-empty">
+        <i data-lucide="calendar-x"></i>
+        <p>Nenhum compromisso encontrado</p>
+        <button class="btn-outline" onclick="openAddModal('event')">Adicionar compromisso</button>
+      </div>
+
+      <div class="agenda-list" id="agenda-list"></div>
+    </section>
+
+    <!-- ===== VIEW: CALENDAR ===== -->
+    <section class="view hidden" id="view-calendar">
+      <div class="calendar-layout">
+        <div class="calendar-widget">
+          <div class="cal-nav">
+            <button class="cal-nav-btn" onclick="changeMonth(-1)"><i data-lucide="chevron-left"></i></button>
+            <span class="cal-month-label" id="cal-month-label"></span>
+            <button class="cal-nav-btn" onclick="changeMonth(1)"><i data-lucide="chevron-right"></i></button>
+          </div>
+          <div class="cal-grid">
+            <div class="cal-dow">Dom</div>
+            <div class="cal-dow">Seg</div>
+            <div class="cal-dow">Ter</div>
+            <div class="cal-dow">Qua</div>
+            <div class="cal-dow">Qui</div>
+            <div class="cal-dow">Sex</div>
+            <div class="cal-dow">Sáb</div>
+          </div>
+          <div class="cal-days" id="cal-days"></div>
+        </div>
+
+        <div class="calendar-events-panel">
+          <div class="panel-header">
+            <h3 id="selected-day-label">Selecione um dia</h3>
+            <button class="btn-primary btn-sm" onclick="openAddModal('event')" title="Novo compromisso">
+              <i data-lucide="plus"></i>
+            </button>
+          </div>
+          <div class="day-events" id="day-events">
+            <div class="empty-state-sm">
+              <i data-lucide="calendar"></i>
+              <p>Clique em um dia para ver os compromissos</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===== MODAL: ADD/EDIT ===== -->
+  <div class="modal-overlay hidden" id="modal-overlay" onclick="closeModal(event)">
+    <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-title">Nova Tarefa</h2>
+        <button class="modal-close" onclick="closeModalDirect()" aria-label="Fechar">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Type Selector -->
+        <div class="type-selector" id="type-selector">
+          <button class="type-btn active" id="type-btn-task" onclick="setModalType('task')">
+            <i data-lucide="columns-3"></i> Tarefa
+          </button>
+          <button class="type-btn" id="type-btn-event" onclick="setModalType('event')">
+            <i data-lucide="calendar-clock"></i> Compromisso
+          </button>
+        </div>
+
+        <form id="modal-form" onsubmit="saveItem(event)">
+          <!-- Common: Title -->
+          <div class="form-group">
+            <label for="f-title">Título *</label>
+            <input type="text" id="f-title" placeholder="Digite o título..." required autocomplete="off" />
+          </div>
+
+          <!-- Common: Description -->
+          <div class="form-group">
+            <label for="f-desc">Descrição</label>
+            <textarea id="f-desc" placeholder="Adicione uma descrição..." rows="2"></textarea>
+          </div>
+
+          <!-- Task fields -->
+          <div id="task-fields">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="f-priority">Prioridade</label>
+                <select id="f-priority">
+                  <option value="low">🟢 Baixa</option>
+                  <option value="medium" selected>🟡 Média</option>
+                  <option value="high">🔴 Alta</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="f-status">Coluna</label>
+                <select id="f-status">
+                  <option value="todo">A Fazer</option>
+                  <option value="doing">Em Andamento</option>
+                  <option value="done">Concluído</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="f-due">Prazo (opcional)</label>
+              <input type="date" id="f-due" />
+            </div>
+          </div>
+
+          <!-- Event fields -->
+          <div id="event-fields" class="hidden">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="f-date">Data *</label>
+                <input type="date" id="f-date" />
+              </div>
+              <div class="form-group">
+                <label for="f-time">Hora</label>
+                <input type="time" id="f-time" />
+              </div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn-ghost" onclick="closeModalDirect()">Cancelar</button>
+            <button type="submit" class="btn-primary" id="btn-save">Salvar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TOAST ===== -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- ===== CONFIRM DELETE ===== -->
+  <div class="modal-overlay hidden" id="confirm-overlay" onclick="closeConfirm(event)">
+    <div class="modal modal-sm" id="confirm-modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Confirmar exclusão</h2>
+        <button class="modal-close" onclick="closeConfirmDirect()"><i data-lucide="x"></i></button>
+      </div>
+      <div class="modal-body">
+        <p class="confirm-text" id="confirm-text">Tem certeza que deseja excluir este item?</p>
+        <div class="form-actions">
+          <button class="btn-ghost" onclick="closeConfirmDirect()">Cancelar</button>
+          <button class="btn-danger" id="btn-confirm-delete" onclick="confirmDelete()">Excluir</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading overlay -->
+  <div class="app-loading" id="app-loading">
+    <div class="loading-spinner"></div>
+    <p>Carregando...</p>
+  </div>
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://dnndagywrhskkqmhdurt.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRubmRhZ3l3cmhza2txbWhkdXJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyNTUxNzEsImV4cCI6MjA5MjgzMTE3MX0.uCWwwLXwFwvldj4RNFtvlWnyH1HXd9w-AsEJ-byMLxU';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  </script>
+  <script src="app.js"></script>
+</body>
+</html>
