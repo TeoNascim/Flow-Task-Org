@@ -10,13 +10,25 @@ let state = {
   authMode: 'login'
 };
 
+// ===== TIMEOUT HELPER =====
+async function withTimeout(promise, ms = 12000) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error('timeout')), ms);
+  });
+  try {
+    const result = await Promise.race([promise, timeout]);
+    clearTimeout(timer); return result;
+  } catch (err) { clearTimeout(timer); throw err; }
+}
+
 // ===== RETRY HELPER =====
-async function withRetry(fn, retries = 2, delayMs = 800) {
+async function withRetry(fn, retries = 1, delayMs = 600) {
   for (let i = 0; i <= retries; i++) {
     try { return await fn(); }
     catch (err) {
       if (i === retries) throw err;
-      await new Promise(r => setTimeout(r, delayMs * (i + 1)));
+      await new Promise(r => setTimeout(r, delayMs));
     }
   }
 }
@@ -24,14 +36,16 @@ async function withRetry(fn, retries = 2, delayMs = 800) {
 // ===== SUPABASE DB LAYER =====
 const db = {
   async loadTasks() {
-    return withRetry(async () => {
+    return withTimeout(withRetry(async () => {
       const { data, error } = await _supabase.from('tasks').select('*').order('created_at');
       if (error) throw error;
       return data.map(rowToTask);
-    });
+    }));
   },
   async createTask(task) {
-    return withRetry(() => _supabase.from('tasks').insert(taskToRow(task)).then(({error}) => { if(error) throw error; }));
+    return withTimeout(withRetry(() =>
+      _supabase.from('tasks').insert(taskToRow(task)).then(({error}) => { if(error) throw error; })
+    ));
   },
   async updateTask(id, changes) {
     const row = {};
@@ -40,20 +54,26 @@ const db = {
     if (changes.priority !== undefined) row.priority    = changes.priority;
     if (changes.status !== undefined)   row.status      = changes.status;
     if (changes.due !== undefined)      row.due_date    = changes.due || null;
-    return withRetry(() => _supabase.from('tasks').update(row).eq('id', id).then(({error}) => { if(error) throw error; }));
+    return withTimeout(withRetry(() =>
+      _supabase.from('tasks').update(row).eq('id', id).then(({error}) => { if(error) throw error; })
+    ));
   },
   async deleteTask(id) {
-    return withRetry(() => _supabase.from('tasks').delete().eq('id', id).then(({error}) => { if(error) throw error; }));
+    return withTimeout(withRetry(() =>
+      _supabase.from('tasks').delete().eq('id', id).then(({error}) => { if(error) throw error; })
+    ));
   },
   async loadEvents() {
-    return withRetry(async () => {
+    return withTimeout(withRetry(async () => {
       const { data, error } = await _supabase.from('events').select('*').order('event_date');
       if (error) throw error;
       return data.map(rowToEvent);
-    });
+    }));
   },
   async createEvent(ev) {
-    return withRetry(() => _supabase.from('events').insert(eventToRow(ev)).then(({error}) => { if(error) throw error; }));
+    return withTimeout(withRetry(() =>
+      _supabase.from('events').insert(eventToRow(ev)).then(({error}) => { if(error) throw error; })
+    ));
   },
   async updateEvent(id, changes) {
     const row = {};
@@ -61,10 +81,14 @@ const db = {
     if (changes.desc !== undefined)  row.description = changes.desc;
     if (changes.date !== undefined)  row.event_date  = changes.date;
     if (changes.time !== undefined)  row.event_time  = changes.time || null;
-    return withRetry(() => _supabase.from('events').update(row).eq('id', id).then(({error}) => { if(error) throw error; }));
+    return withTimeout(withRetry(() =>
+      _supabase.from('events').update(row).eq('id', id).then(({error}) => { if(error) throw error; })
+    ));
   },
   async deleteEvent(id) {
-    return withRetry(() => _supabase.from('events').delete().eq('id', id).then(({error}) => { if(error) throw error; }));
+    return withTimeout(withRetry(() =>
+      _supabase.from('events').delete().eq('id', id).then(({error}) => { if(error) throw error; })
+    ));
   }
 };
 
@@ -369,8 +393,11 @@ async function saveItem(e) {
     closeModalDirect(); renderTasks();
     if (state.currentView==='agenda') renderAgenda();
     if (state.currentView==='calendar') { renderCalendar(); if (state.selectedDay) selectDay(state.selectedDay); }
-  } catch (err) { console.error(err); showToast('Erro ao salvar.','error'); }
-  finally { btn.disabled=false; btn.textContent='Salvar'; }
+  } catch (err) {
+    console.error('saveItem:', err);
+    const isTimeout = err.message === 'timeout';
+    showToast(isTimeout ? 'Tempo esgotado — verifique sua conexão.' : `Erro: ${err.message || 'tente novamente'}`, 'error');
+  } finally { btn.disabled=false; btn.textContent='Salvar'; }
 }
 
 // ===== EDIT =====
@@ -420,8 +447,10 @@ async function confirmDelete() {
     renderTasks();
     if (state.currentView==='agenda') renderAgenda();
     if (state.currentView==='calendar') { renderCalendar(); if (state.selectedDay) selectDay(state.selectedDay); }
-  } catch { showToast('Erro ao excluir.','error'); }
-  finally { btn.disabled=false; btn.textContent='Excluir'; closeConfirmDirect(); }
+  } catch (err) {
+    console.error('delete:', err);
+    showToast(err.message === 'timeout' ? 'Tempo esgotado.' : 'Erro ao excluir.', 'error');
+  } finally { btn.disabled=false; btn.textContent='Excluir'; closeConfirmDirect(); }
 }
 
 // ===== TOAST =====
