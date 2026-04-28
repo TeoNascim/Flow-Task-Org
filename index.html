@@ -303,7 +303,29 @@
     </div>
   </div>
 
+  <!-- Bottom Nav (mobile) -->
+  <nav class="bottom-nav nav-hidden" id="bottom-nav">
+    <button class="bottom-nav-btn active" id="bnav-tasks" onclick="switchView('tasks')">
+      <i data-lucide="columns-3"></i>
+      <span>Tarefas</span>
+    </button>
+    <button class="bottom-nav-btn" id="bnav-agenda" onclick="switchView('agenda')">
+      <i data-lucide="calendar-clock"></i>
+      <span>Agenda</span>
+      <span class="bnav-badge" id="bnav-badge"></span>
+    </button>
+    <button class="bottom-nav-btn" id="bnav-calendar" onclick="switchView('calendar')">
+      <i data-lucide="calendar-days"></i>
+      <span>Calendário</span>
+    </button>
+    <button class="bottom-nav-btn" onclick="openAddModal()">
+      <div class="bnav-add-btn"><i data-lucide="plus"></i></div>
+      <span>Novo</span>
+    </button>
+  </nav>
+
   <!-- Loading overlay -->
+
   <div class="app-loading" id="app-loading">
     <div class="loading-spinner"></div>
     <p>Carregando...</p>

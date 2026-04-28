@@ -85,11 +85,13 @@ function eventToRow(e) {
 function showLoginScreen() {
   document.getElementById('login-screen').classList.remove('hidden');
   document.getElementById('user-menu').style.display = 'none';
+  document.getElementById('bottom-nav').classList.add('nav-hidden');
   lucide.createIcons();
 }
 function hideLoginScreen() {
   document.getElementById('login-screen').classList.add('hidden');
   document.getElementById('user-menu').style.display = 'flex';
+  document.getElementById('bottom-nav').classList.remove('nav-hidden');
 }
 
 function toggleAuthMode() {
@@ -191,8 +193,11 @@ function switchView(view) {
   state.currentView = view;
   document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('view-' + view).classList.remove('hidden');
   document.getElementById('nav-' + view).classList.add('active');
+  const bnavBtn = document.getElementById('bnav-' + view);
+  if (bnavBtn) bnavBtn.classList.add('active');
   const titles = { tasks:['Quadro de Tarefas','Organize suas atividades'], agenda:['Agenda','Seus compromissos'], calendar:['Calendário','Visão mensal'] };
   document.getElementById('view-title').textContent = titles[view][0];
   document.getElementById('view-subtitle').textContent = titles[view][1];
@@ -270,6 +275,8 @@ function eventCardHTML(ev) {
 function updateAgendaBadge() {
   const c = state.events.filter(e => isToday(e.date) || isThisWeek(e.date)).length;
   document.getElementById('badge-agenda').textContent = c > 0 ? c : '';
+  const bb = document.getElementById('bnav-badge');
+  if (bb) bb.textContent = c > 0 ? c : '';
 }
 
 // ===== CALENDAR =====
