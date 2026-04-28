@@ -6,13 +6,18 @@
   <meta name="description" content="Organizador pessoal de tarefas, compromissos e agenda — simples, rápido e bonito." />
   <title>Flow — Organizador Pessoal</title>
 
-  <!-- Google Fonts -->
+  <!-- Preconnect para CDNs (performance) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <link rel="preconnect" href="https://unpkg.com" />
+  <link rel="preconnect" href="https://dnndagywrhskkqmhdurt.supabase.co" />
 
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Lucide Icons (versão fixa) -->
+  <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.js"></script>
 
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -338,8 +343,8 @@
     </div>
   </div>
 
-  <!-- Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Supabase (versão fixa para estabilidade) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
   <script>
     const SUPABASE_URL = 'https://dnndagywrhskkqmhdurt.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRubmRhZ3l3cmhza2txbWhkdXJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyNTUxNzEsImV4cCI6MjA5MjgzMTE3MX0.uCWwwLXwFwvldj4RNFtvlWnyH1HXd9w-AsEJ-byMLxU';

@@ -7,19 +7,31 @@ let state = {
   selectedDay: null, agendaFilter: 'today',
   editingId: null, defaultStatus: 'todo',
   deleteId: null, deleteKind: null,
-  authMode: 'login' // 'login' | 'signup'
+  authMode: 'login'
 };
+
+// ===== RETRY HELPER =====
+async function withRetry(fn, retries = 2, delayMs = 800) {
+  for (let i = 0; i <= retries; i++) {
+    try { return await fn(); }
+    catch (err) {
+      if (i === retries) throw err;
+      await new Promise(r => setTimeout(r, delayMs * (i + 1)));
+    }
+  }
+}
 
 // ===== SUPABASE DB LAYER =====
 const db = {
   async loadTasks() {
-    const { data, error } = await _supabase.from('tasks').select('*').order('created_at');
-    if (error) { console.error(error); return []; }
-    return data.map(rowToTask);
+    return withRetry(async () => {
+      const { data, error } = await _supabase.from('tasks').select('*').order('created_at');
+      if (error) throw error;
+      return data.map(rowToTask);
+    });
   },
   async createTask(task) {
-    const { error } = await _supabase.from('tasks').insert(taskToRow(task));
-    if (error) throw error;
+    return withRetry(() => _supabase.from('tasks').insert(taskToRow(task)).then(({error}) => { if(error) throw error; }));
   },
   async updateTask(id, changes) {
     const row = {};
@@ -28,21 +40,20 @@ const db = {
     if (changes.priority !== undefined) row.priority    = changes.priority;
     if (changes.status !== undefined)   row.status      = changes.status;
     if (changes.due !== undefined)      row.due_date    = changes.due || null;
-    const { error } = await _supabase.from('tasks').update(row).eq('id', id);
-    if (error) throw error;
+    return withRetry(() => _supabase.from('tasks').update(row).eq('id', id).then(({error}) => { if(error) throw error; }));
   },
   async deleteTask(id) {
-    const { error } = await _supabase.from('tasks').delete().eq('id', id);
-    if (error) throw error;
+    return withRetry(() => _supabase.from('tasks').delete().eq('id', id).then(({error}) => { if(error) throw error; }));
   },
   async loadEvents() {
-    const { data, error } = await _supabase.from('events').select('*').order('event_date');
-    if (error) { console.error(error); return []; }
-    return data.map(rowToEvent);
+    return withRetry(async () => {
+      const { data, error } = await _supabase.from('events').select('*').order('event_date');
+      if (error) throw error;
+      return data.map(rowToEvent);
+    });
   },
   async createEvent(ev) {
-    const { error } = await _supabase.from('events').insert(eventToRow(ev));
-    if (error) throw error;
+    return withRetry(() => _supabase.from('events').insert(eventToRow(ev)).then(({error}) => { if(error) throw error; }));
   },
   async updateEvent(id, changes) {
     const row = {};
@@ -50,12 +61,10 @@ const db = {
     if (changes.desc !== undefined)  row.description = changes.desc;
     if (changes.date !== undefined)  row.event_date  = changes.date;
     if (changes.time !== undefined)  row.event_time  = changes.time || null;
-    const { error } = await _supabase.from('events').update(row).eq('id', id);
-    if (error) throw error;
+    return withRetry(() => _supabase.from('events').update(row).eq('id', id).then(({error}) => { if(error) throw error; }));
   },
   async deleteEvent(id) {
-    const { error } = await _supabase.from('events').delete().eq('id', id);
-    if (error) throw error;
+    return withRetry(() => _supabase.from('events').delete().eq('id', id).then(({error}) => { if(error) throw error; }));
   }
 };
 
